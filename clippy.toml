@@ -1,0 +1,6 @@
+# for `disallowed_method`:
+# https://rust-lang.github.io/rust-clippy/master/index.html#disallowed_method
+disallowed-methods = []
+
+# 函数参数最长不要超过5个
+too-many-arguments-threshold=5
