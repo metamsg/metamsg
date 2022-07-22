@@ -1,8 +1,9 @@
 use std::fmt::Debug;
+use std::io;
 use std::marker::PhantomData;
+use futures::{StreamExt};
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net::{TcpListener};
-use tokio_stream::StreamExt;
 use tokio_util::codec::{Decoder, Encoder};
 use crate::BoxError;
 use crate::channel::Channel;
@@ -18,8 +19,10 @@ pub struct ServerBootstrap<Codec, Item> {
 
 impl <Codec, Item> ServerBootstrap<Codec, Item>
 where
-    Codec: Debug + Clone + Encoder<Item> + Decoder + Send + 'static,
-    Item: Debug + Send + 'static
+    Codec: Debug + Clone + Encoder<Item> + Decoder + Send + Sync + 'static,
+    <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
+    <Codec as Decoder>::Error: From<io::Error> + Debug,
+    Item: Debug + Send + 'static, <Codec as Decoder>::Item: Debug,
 {
    /// Create a ServerBootstrap with codec.
    pub fn new(codec: Codec) -> Self {
@@ -44,11 +47,19 @@ where
 }
 
 /// Create a `Channel` when a connection come on, and then create a handle chain.
-async fn init_channel<Item: Debug, T: Debug + Clone + Encoder<Item> + Decoder>(socket: impl AsyncRead + AsyncWrite + Send + Unpin + 'static, codec: T) {
+async fn init_channel<Conn, Codec, Item>(socket: Conn, codec: Codec)
+where
+    Conn: AsyncRead + AsyncWrite + Send + Unpin + 'static,
+    Codec: Debug + Clone + Encoder<Item> + Decoder + Send + Sync + 'static,
+    <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
+    <Codec as Decoder>::Error: From<io::Error> + Debug,
+    Item: Debug + Send + 'static, <Codec as Decoder>::Item: Debug,
+{
    println!("a new conn come in");
    let mut channel = Channel::new(socket, codec);
-   while let Some(_v) = channel.next().await {
-      // channel.send(v.unwrap());
-      println!("world");
+   while let Some(v) = channel.next().await {
+      // There‘s no know item's type.
+      // let _ = channel.send("world".to_string());
+      println!("{:?}" ,v.unwrap());
    }
 }

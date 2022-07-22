@@ -28,7 +28,8 @@ impl <Conn, Codec, Item> Channel<Conn, Codec, Item>
 where
     Conn: AsyncRead + AsyncWrite + Send + Unpin + 'static,
     Codec: Debug + Clone + Encoder<Item> + Decoder,
-    Item: Debug,
+    <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
+    <Codec as Decoder>::Error: From<io::Error> + Debug,
 {
     /// Create a channel with Socket and codec.
     pub fn new(conn: Conn, codec: Codec) -> Self {
@@ -46,10 +47,10 @@ where
 }
 
 impl<Conn, Codec, Item> Stream for Channel<Conn, Codec, Item>
-    where
-        Conn: AsyncRead,
-        Codec: Decoder,
-        Item: Debug
+where
+    Conn: AsyncRead,
+    Codec: Decoder,
+    Codec::Error: From<io::Error> + Debug,
 {
     type Item = Result<Codec::Item, Codec::Error>;
 
@@ -59,10 +60,10 @@ impl<Conn, Codec, Item> Stream for Channel<Conn, Codec, Item>
 }
 
 impl<Conn, Codec, Item> Sink<Item> for Channel<Conn, Codec, Item>
-    where
-        Conn: AsyncWrite,
-        Codec: Encoder<Item>,
-        Codec::Error: From<io::Error>,
+where
+    Conn: AsyncWrite,
+    Codec: Encoder<Item>,
+    Codec::Error: From<io::Error> + Debug,
 {
     type Error = Codec::Error;
 
