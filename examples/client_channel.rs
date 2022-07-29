@@ -16,10 +16,11 @@ async fn main() {
         let handle = tokio::spawn( async move {
             let conn = TcpStream::connect(socket_addr).await.unwrap();
             let mut channel = Channel::new(conn, string_codec.clone());
+            // Channel can't impl clone, send and recv must be a scope. The way is split conn to
+            // make income channel and outcome channel.
             // tokio::spawn(async move {
             //     while let Some(v) = channel.next().await {
             //         println!("{}", v.unwrap());
-            //         // let _ = channel.send(v.unwrap());
             //     }
             // });
             println!("channel-{} started...", i);

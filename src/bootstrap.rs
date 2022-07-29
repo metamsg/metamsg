@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use std::io;
 use std::marker::PhantomData;
+use std::net::SocketAddr;
 use futures::{StreamExt};
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net::{TcpListener};
@@ -37,19 +38,19 @@ where
       let listener = TcpListener::bind("127.0.0.1:8080").await?;
 
       loop {
-         let (conn, _) = listener.accept().await?;
+         let (conn, remote) = listener.accept().await?;
          let codec = self.codec.clone();
          tokio::spawn(async move {
-            init_channel(conn, codec).await;
-         }).await?;
+            init_channel(conn, codec, remote).await;
+         });
       }
    }
 }
 
 /// Create a `Channel` when a connection come on, and then create a handle chain.
-async fn init_channel<Conn, Codec, Item>(socket: Conn, codec: Codec)
+async fn init_channel<Conn, Codec, Item>(socket: Conn, codec: Codec, remote: SocketAddr)
 where
-    Conn: AsyncRead + AsyncWrite + Send + Unpin + 'static,
+    Conn: AsyncRead + AsyncWrite + Send + Unpin + 'static + Debug,
     Codec: Debug + Clone + Encoder<Item> + Decoder + Send + Sync + 'static,
     <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
     <Codec as Decoder>::Error: From<io::Error> + Debug,
@@ -57,9 +58,11 @@ where
 {
    println!("a new conn come in");
    let mut channel = Channel::new(socket, codec);
+   println!("{:?}", channel);
    while let Some(v) = channel.next().await {
-      // There‘s no know item's type.
-      // let _ = channel.send("world".to_string());
-      println!("{:?}" ,v.unwrap());
+      // There‘s no know item's type, in general, send is called in handle, that time, item's type
+      // maybe has been actual.
+      // let _ = channel.send("world");
+      println!("{:?}, {:?}" ,remote ,v.unwrap());
    }
 }

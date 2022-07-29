@@ -9,7 +9,7 @@ use futures::{Sink, Stream};
 use tokio::io::{AsyncRead, AsyncWrite};
 
 pin_project! {
-    /// Every `Channel` hold a `Framed` and a `Stream`
+    /// Every `Channel` hold a `Framed` and impl `Stream` and `Sink`
     #[derive(Debug)]
     pub struct Channel<Conn, Codec, Item> {
         #[pin]
@@ -26,7 +26,7 @@ pub enum ChannelStatus {
 
 impl <Conn, Codec, Item> Channel<Conn, Codec, Item>
 where
-    Conn: AsyncRead + AsyncWrite + Send + Unpin + 'static,
+    Conn: AsyncRead + AsyncWrite + Send + Unpin + 'static + Debug,
     Codec: Debug + Clone + Encoder<Item> + Decoder,
     <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
     <Codec as Decoder>::Error: From<io::Error> + Debug,
