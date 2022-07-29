@@ -6,12 +6,12 @@ use tokio::net::TcpStream;
 use metamsg::Channel;
 use metamsg::string_codec::StringCodec;
 
-#[tokio::main(flavor = "multi_thread", worker_threads = 3)]
+#[tokio::main(flavor = "multi_thread", worker_threads = 8)]
 async fn main() {
     let string_codec = StringCodec::new();
     let socket_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
     let mut handles = Vec::new();
-    for i in 1..3 {
+    for i in 1..8 {
         println!("channel-{} starting...", i);
         let handle = tokio::spawn( async move {
             let conn = TcpStream::connect(socket_addr).await.unwrap();
@@ -26,7 +26,8 @@ async fn main() {
             println!("channel-{} started...", i);
             loop {
                 thread::sleep(Duration::from_secs(1));
-                let _ = channel.send("hello".to_string()).await;
+                let result = channel.send("hello".to_string()).await;
+                println!("{:?}", result)
             }
         });
         handles.push(handle);
