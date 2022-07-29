@@ -1,8 +1,8 @@
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::thread;
 use std::time::Duration;
 use futures::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
+use tokio::time;
 use metamsg::Channel;
 use metamsg::string_codec::StringCodec;
 
@@ -25,7 +25,7 @@ async fn main() {
             // });
             println!("channel-{} started...", i);
             loop {
-                thread::sleep(Duration::from_secs(1));
+                time::sleep(Duration::from_secs(1)).await;
                 let result = channel.send("hello".to_string()).await;
                 println!("{:?}", result)
             }
