@@ -1,6 +1,6 @@
-use std::sync::Arc;
-use slotmap::{DefaultKey, SlotMap};
 use crate::Channel;
+use slotmap::{DefaultKey, SlotMap};
+use std::sync::Arc;
 
 /// a channel create, then initial a chain with handle contexts
 // consider if need contexts, because of there are streams.

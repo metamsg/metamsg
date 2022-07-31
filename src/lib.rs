@@ -52,20 +52,20 @@
 // Rustc lints.
 #![deny(missing_docs, unused_imports)]
 
-mod transport;
-mod codec;
-mod channel;
-mod handle;
-mod proto;
 /// Server bootstrap.
 pub mod bootstrap;
+mod channel;
+mod codec;
+mod handle;
+mod proto;
+mod transport;
 
 /// Box Error, when the lib is stable, replace with thiserror.
 pub type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
-pub use codec::string_codec;
 pub use bootstrap::ServerBootstrap;
 pub use channel::Channel;
+pub use codec::string_codec;
 
 #[cfg(test)]
 mod tests {
@@ -75,5 +75,3 @@ mod tests {
         assert_eq!(result, 4);
     }
 }
-
-
