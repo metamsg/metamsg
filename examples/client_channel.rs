@@ -1,10 +1,10 @@
+use futures::{SinkExt, StreamExt};
+use metamsg::string_codec::StringCodec;
+use metamsg::Channel;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::time::Duration;
-use futures::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
 use tokio::time;
-use metamsg::Channel;
-use metamsg::string_codec::StringCodec;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 8)]
 async fn main() {
@@ -13,7 +13,7 @@ async fn main() {
     let mut handles = Vec::new();
     for i in 1..8 {
         println!("channel-{} starting...", i);
-        let handle = tokio::spawn( async move {
+        let handle = tokio::spawn(async move {
             let conn = TcpStream::connect(socket_addr).await.unwrap();
             let mut channel = Channel::new(conn, string_codec.clone());
             // Channel can't impl clone, send and recv must be a scope. The way is split conn to

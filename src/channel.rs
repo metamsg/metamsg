@@ -1,12 +1,12 @@
+use futures::{Sink, Stream};
+use pin_project_lite::pin_project;
 use std::fmt::Debug;
 use std::io;
-use pin_project_lite::pin_project;
-use tokio_util::codec::{Decoder, Encoder, Framed};
 use std::marker::PhantomData;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use futures::{Sink, Stream};
 use tokio::io::{AsyncRead, AsyncWrite};
+use tokio_util::codec::{Decoder, Encoder, Framed};
 
 pin_project! {
     /// Every `Channel` hold a `Framed` and impl `Stream` and `Sink`
@@ -24,7 +24,7 @@ pub enum ChannelStatus {
     Active,
 }
 
-impl <Conn, Codec, Item> Channel<Conn, Codec, Item>
+impl<Conn, Codec, Item> Channel<Conn, Codec, Item>
 where
     Conn: AsyncRead + AsyncWrite + Send + Unpin + 'static + Debug,
     Codec: Debug + Clone + Encoder<Item> + Decoder,

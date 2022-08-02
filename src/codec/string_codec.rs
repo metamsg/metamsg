@@ -1,5 +1,5 @@
-use std::io;
 use bytes::{Buf, BytesMut};
+use std::io;
 use tokio_util::codec::{Decoder, Encoder};
 
 /// String codec
@@ -9,7 +9,6 @@ pub struct StringCodec {}
 const MAX: usize = 8 * 1024 * 1024 * 1024;
 
 impl StringCodec {
-    
     /// Create a empty string codec
     pub fn new() -> StringCodec {
         StringCodec {}
@@ -25,7 +24,7 @@ impl Encoder<String> for StringCodec {
         if item.len() > MAX {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!("Frame of length {} is too large.", item.len())
+                format!("Frame of length {} is too large.", item.len()),
             ));
         }
 
