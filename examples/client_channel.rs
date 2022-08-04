@@ -1,3 +1,4 @@
+use std::io::Error;
 use futures::{SinkExt, StreamExt};
 use metamsg::string_codec::StringCodec;
 use metamsg::Channel;
@@ -27,7 +28,13 @@ async fn main() {
             loop {
                 time::sleep(Duration::from_secs(1)).await;
                 let result = channel.send("hello".to_string()).await;
-                println!("{:?}", result)
+                match result {
+                    Ok(_) => {}
+                    Err(err) => {
+                        println!("{:?}", err);
+                        break;
+                    }
+                }
             }
         });
         handles.push(handle);
