@@ -1,7 +1,7 @@
-use std::io::Error;
 use futures::{SinkExt, StreamExt};
 use metamsg::string_codec::StringCodec;
 use metamsg::Channel;
+use std::io::Error;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::time::Duration;
 use tokio::net::TcpStream;
