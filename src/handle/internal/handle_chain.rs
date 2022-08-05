@@ -1,22 +1,23 @@
 use crate::handle::internal::handle_context::HandleContext;
 use crate::handle::internal::head_context::HeadContext;
 use crate::handle::internal::tail_context::TailContext;
+use crate::Channel;
 use slotmap::{DefaultKey, SlotMap};
 
 /// A channel create, then initial a chain with handle contexts
 // Consider if need contexts, because of there are streams.
 // Need, more flexible.
-pub struct Chain<Handle> {
+pub struct Chain<Handle, Conn, Codec, Item> {
     handles: SlotMap<DefaultKey, HandleContext<Handle>>,
-    head: HeadContext,
+    head: HeadContext<Conn, Codec, Item>,
     tail: TailContext,
 }
 
-impl<Handle> Chain<Handle> {
-    pub fn new() -> Self {
+impl<Handle, Conn, Codec, Item> Chain<Handle, Conn, Codec, Item> {
+    pub fn new(channel: Channel<Conn, Codec, Item>) -> Self {
         Self {
             handles: SlotMap::new(),
-            head: HeadContext::new(),
+            head: HeadContext::new(channel),
             tail: TailContext::new(),
         }
     }

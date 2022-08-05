@@ -62,7 +62,7 @@ where
 {
     println!("a new conn come in");
     let mut channel = Channel::new(socket, codec);
-    let mut chain = Chain::new();
+    let mut chain = Chain::new(channel);
     let log_handler = LoggerHandler::new();
     chain.add_last(log_handler);
     println!("{:?}", channel);
