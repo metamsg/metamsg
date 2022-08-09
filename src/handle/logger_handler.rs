@@ -8,12 +8,12 @@ impl LoggerHandler {
     }
 }
 
-impl Handle for LoggerHandler {
-    type Input = String;
-    type Output = String;
-}
+impl Handle for LoggerHandler {}
 
 impl InboundHandle for LoggerHandler {
+    type Input = String;
+    type Output = String;
+
     fn read(input: Self::Input) -> Self::Output {
         println!("{:?}", input);
         input

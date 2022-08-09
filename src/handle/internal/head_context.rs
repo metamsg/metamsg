@@ -1,6 +1,6 @@
 use crate::handle::{Handle, InboundHandle, OutboundHandle};
 use crate::Channel;
-use futures::{Sink, Stream, StreamExt};
+use futures::{Sink, Stream};
 use pin_project_lite::pin_project;
 use slotmap::DefaultKey;
 use std::fmt::Debug;
@@ -31,28 +31,19 @@ impl<Conn, Codec, Item> HeadContext<Conn, Codec, Item> {
     }
 }
 
-impl<Conn, Codec, Item> Handle for HeadContext<Conn, Codec, Item>
-where
-    Conn: AsyncRead + AsyncWrite + Send + Unpin + 'static + Debug,
-    Codec: Debug + Clone + Encoder<Item> + Decoder + Send + Sync + 'static,
-    <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
-    <Codec as Decoder>::Error: From<io::Error> + Debug,
-    Item: Debug + Send + 'static,
-    <Codec as Decoder>::Item: Debug,
-{
-    type Input = Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>;
-    type Output = Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>;
-}
+impl<Conn, Codec, Item> Handle for HeadContext<Conn, Codec, Item> {}
 
 impl<Conn, Codec, Item> InboundHandle for HeadContext<Conn, Codec, Item>
 where
-    Conn: AsyncRead + AsyncWrite + Send + Unpin + 'static + Debug,
-    Codec: Debug + Clone + Encoder<Item> + Decoder + Send + Sync + 'static,
-    <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
+    Conn: AsyncRead,
+    Codec: Decoder,
     <Codec as Decoder>::Error: From<io::Error> + Debug,
-    Item: Debug + Send + 'static,
     <Codec as Decoder>::Item: Debug,
 {
+    type Input = Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>;
+
+    type Output = Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>;
+
     fn read(input: Self::Input) -> Self::Output {
         todo!()
     }
@@ -64,13 +55,15 @@ where
 
 impl<Conn, Codec, Item> OutboundHandle for HeadContext<Conn, Codec, Item>
 where
-    Conn: AsyncRead + AsyncWrite + Send + Unpin + 'static + Debug,
-    Codec: Debug + Clone + Encoder<Item> + Decoder + Send + Sync + 'static,
+    Conn: AsyncWrite,
+    Codec: Encoder<Item>,
     <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
-    <Codec as Decoder>::Error: From<io::Error> + Debug,
     Item: Debug + Send + 'static,
-    <Codec as Decoder>::Item: Debug,
 {
+    type Input = Item;
+
+    type Output = Item;
+
     fn read(input: Self::Input) -> Self::Output {
         todo!()
     }
@@ -84,16 +77,17 @@ impl<Conn, Codec, Item> Stream for HeadContext<Conn, Codec, Item>
 where
     Conn: AsyncRead,
     Codec: Decoder,
-    Codec::Error: From<io::Error> + Debug,
+    <Codec as Decoder>::Error: From<io::Error> + Debug,
+    <Codec as Decoder>::Item: Debug,
 {
-    type Item = <Self as Handle>::Output;
+    type Item = <Self as InboundHandle>::Output;
 
     // 在这里对接inbound handle，将消息发送到handle链里
     // fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
     //     self.project().channel.poll_next(cx)
     // }
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Item>> {
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         self.as_mut()
             .project()
             .channel
@@ -106,7 +100,8 @@ impl<Conn, Codec, Item> Sink<Item> for HeadContext<Conn, Codec, Item>
 where
     Conn: AsyncWrite,
     Codec: Encoder<Item>,
-    Codec::Error: From<io::Error> + Debug,
+    <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
+    Item: Debug + Send + 'static,
 {
     type Error = Codec::Error;
 

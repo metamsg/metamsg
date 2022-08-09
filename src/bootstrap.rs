@@ -1,6 +1,4 @@
 use crate::channel::Channel;
-use crate::handle::internal::handle_chain::Chain;
-use crate::handle::logger_handler::LoggerHandler;
 use crate::BoxError;
 use futures::StreamExt;
 use std::fmt::Debug;
@@ -62,9 +60,9 @@ where
 {
     println!("a new conn come in");
     let mut channel = Channel::new(socket, codec);
-    let mut chain = Chain::new(channel);
-    let log_handler = LoggerHandler::new();
-    chain.add_last(log_handler);
+    // let mut chain = Chain::new(channel);
+    // let log_handler = LoggerHandler::new();
+    // chain.add_last(log_handler);
     println!("{:?}", channel);
     while let Some(v) = channel.next().await {
         // There‘s no know item's type, in general, send is called in handle, that time, item's type
