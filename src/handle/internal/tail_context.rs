@@ -1,5 +1,6 @@
 use slotmap::DefaultKey;
 
+#[derive(Debug)]
 pub(crate) struct TailContext {
     prev: Option<DefaultKey>,
 }

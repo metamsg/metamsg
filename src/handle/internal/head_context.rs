@@ -11,6 +11,7 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use tokio_util::codec::{Decoder, Encoder};
 
 pin_project! {
+    #[derive(Debug)]
     pub(crate) struct HeadContext<Conn, Codec, Item> {
         #[pin]
         channel: Channel<Conn, Codec, Item>,
