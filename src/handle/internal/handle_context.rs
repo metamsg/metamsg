@@ -1,12 +1,12 @@
 use crate::handle::internal::handle_chain::ShareChain;
 use crate::handle::{InboundHandle, OutboundHandle};
 use futures::{Sink, Stream};
+use pin_project_lite::pin_project;
 use slotmap::DefaultKey;
 use std::fmt::Debug;
 use std::io;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use pin_project_lite::pin_project;
 use tokio_util::codec::Encoder;
 
 pin_project! {
@@ -50,24 +50,26 @@ impl<Handle, Conn, Codec, Item> HandleContext<Handle, Conn, Codec, Item> {
     }
 }
 
-impl<Handle, Conn, Codec, Item> Stream for HandleContext<Handle, Conn, Codec, Item>
+impl<Handle, Conn, Codec, Item, T> Stream for HandleContext<Handle, Conn, Codec, Item>
 where
-    Handle: InboundHandle,
+    Handle: InboundHandle<T>,
+    T: Sized
 {
-    type Item = Handle::Output;
+    type Item = T;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         self.as_mut()
             .project()
-            .chain.get_next(self.next).unwrap()
+            .chain
+            .get_next(self.next)
             .poll_next(cx)
             .map(|opt| opt.map(|x| (Handle::read(x))))
     }
 }
 
-impl<Handle, Conn, Codec, Item> Sink<Item> for HandleContext<Handle, Conn, Codec, Item>
+impl<Handle, Conn, Codec, Item, T> Sink<Item> for HandleContext<Handle, Conn, Codec, Item>
 where
-    Handle: OutboundHandle,
+    Handle: OutboundHandle<T>,
     Codec: Encoder<Item>,
     <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
     Item: Debug + Send + 'static,
@@ -75,19 +77,19 @@ where
     type Error = Codec::Error;
 
     fn poll_ready(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.project().chain.get_next(self.next).unwrap().poll_ready(cx)
+        self.project().chain.get_next(self.next).poll_ready(cx)
     }
 
     fn start_send(self: Pin<&mut Self>, item: Item) -> Result<(), Self::Error> {
-        self.project().chain.get_next(self.next).unwrap().start_send(item)
+        self.project().chain.get_next(self.next).start_send(item)
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.project().chain.get_next(self.next).unwrap().poll_flush(cx)
+        self.project().chain.get_next(self.next).poll_flush(cx)
     }
 
     fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.project().chain.get_next(self.next).unwrap().poll_close(cx)
+        self.project().chain.get_next(self.next).poll_close(cx)
     }
 }
 

@@ -7,22 +7,14 @@ pub mod make_handle;
 /// Consider use function or method, stream usually use function.
 pub trait Handle {}
 
-pub trait InboundHandle: Handle {
-    type Input;
-
+pub trait InboundHandle<T>: Handle {
     type Output;
 
-    fn read(input: Self::Input) -> Self::Output;
-
-    fn write(output: Self::Output) -> Self::Input;
+    fn read(input: T) -> Self::Output;
 }
 
-pub trait OutboundHandle: Handle {
-    type Input;
-
+pub trait OutboundHandle<T>: Handle {
     type Output;
 
-    fn read(input: Self::Input) -> Self::Output;
-
-    fn write(output: Self::Output) -> Self::Input;
+    fn write(input: T) -> Self::Output;
 }

@@ -34,43 +34,32 @@ impl<Conn, Codec, Item> HeadContext<Conn, Codec, Item> {
 
 impl<Conn, Codec, Item> Handle for HeadContext<Conn, Codec, Item> {}
 
-impl<Conn, Codec, Item> InboundHandle for HeadContext<Conn, Codec, Item>
+impl<Conn, Codec, Item> InboundHandle<Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>>
+    for HeadContext<Conn, Codec, Item>
 where
     Conn: AsyncRead,
     Codec: Decoder,
     <Codec as Decoder>::Error: From<io::Error> + Debug,
     <Codec as Decoder>::Item: Debug,
 {
-    type Input = Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>;
+    type Output = <Codec as Decoder>::Item;
 
-    type Output = Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>;
-
-    fn read(input: Self::Input) -> Self::Output {
-        todo!()
-    }
-
-    fn write(output: Self::Output) -> Self::Input {
-        todo!()
+    fn read(input: Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>) -> Self::Output {
+        input.unwrap()
     }
 }
 
-impl<Conn, Codec, Item> OutboundHandle for HeadContext<Conn, Codec, Item>
+impl<Conn, Codec, Item> OutboundHandle<Item> for HeadContext<Conn, Codec, Item>
 where
     Conn: AsyncWrite,
     Codec: Encoder<Item>,
     <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
     Item: Debug + Send + 'static,
 {
-    type Input = Item;
-
     type Output = Item;
 
-    fn read(input: Self::Input) -> Self::Output {
-        todo!()
-    }
-
-    fn write(output: Self::Output) -> Self::Input {
-        todo!()
+    fn write(input: Item) -> Self::Output {
+        input
     }
 }
 
@@ -81,19 +70,14 @@ where
     <Codec as Decoder>::Error: From<io::Error> + Debug,
     <Codec as Decoder>::Item: Debug,
 {
-    type Item = <Self as InboundHandle>::Output;
-
-    // 在这里对接inbound handle，将消息发送到handle链里
-    // fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-    //     self.project().channel.poll_next(cx)
-    // }
+    type Item = <Codec as Decoder>::Item;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         self.as_mut()
             .project()
             .channel
             .poll_next(cx)
-            .map(|opt| opt.map(|x| (<Self as InboundHandle>::read(x))))
+            .map(|opt| opt.map(|x| (<Self as InboundHandle<Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>>>::read(x))))
     }
 }
 

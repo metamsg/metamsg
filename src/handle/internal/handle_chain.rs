@@ -3,6 +3,8 @@ use crate::handle::internal::head_context::HeadContext;
 use crate::handle::internal::tail_context::TailContext;
 use crate::Channel;
 use slotmap::{DefaultKey, SlotMap};
+use std::borrow::BorrowMut;
+use std::pin::Pin;
 use std::sync::Arc;
 
 /// A channel create, then initial a chain with handle contexts
@@ -18,11 +20,11 @@ pub struct Chain<Handle, Conn, Codec, Item> {
 #[derive(Debug, Clone)]
 pub struct ShareChain<Handle, Conn, Codec, Item>(Arc<Chain<Handle, Conn, Codec, Item>>);
 
-// impl<Handle, Conn, Codec, Item> Clone for ShareChain<Handle, Conn, Codec, Item> {
-//     fn clone(&self) -> Self {
-//         todo!()
-//     }
-// }
+impl<Handle, Conn, Codec, Item> Clone for ShareChain<Handle, Conn, Codec, Item> {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+}
 
 impl<Handle, Conn, Codec, Item> ShareChain<Handle, Conn, Codec, Item> {
     pub fn new(channel: Channel<Conn, Codec, Item>) -> Self {
@@ -42,7 +44,10 @@ impl<Handle, Conn, Codec, Item> ShareChain<Handle, Conn, Codec, Item> {
         self.0.tail.set_prev(Some(key));
     }
 
-    pub fn get_next(&self, key: Option<DefaultKey>) -> Option<&HandleContext<Handle, Conn, Codec, Item>> {
-        self.0.handles.get(key.unwrap())
+    pub fn get_next(
+        &self,
+        key: Option<DefaultKey>,
+    ) -> Pin<&mut HandleContext<Handle, Conn, Codec, Item>> {
+        Pin::new(self.0.handles.get(key.unwrap()).unwrap().borrow_mut())
     }
 }
