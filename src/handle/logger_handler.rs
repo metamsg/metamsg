@@ -10,10 +10,9 @@ impl LoggerHandler {
 
 impl Handle for LoggerHandler {}
 
-impl InboundHandle<String> for LoggerHandler {
-    type Output = String;
+impl InboundHandle for LoggerHandler {
 
-    fn read(input: String) -> Self::Output {
+    fn read(input: String) -> String {
         println!("{:?}", input);
         input
     }

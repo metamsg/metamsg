@@ -17,7 +17,7 @@ pub struct Chain<Handle, Conn, Codec, Item> {
     tail: TailContext,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ShareChain<Handle, Conn, Codec, Item>(Arc<Chain<Handle, Conn, Codec, Item>>);
 
 impl<Handle, Conn, Codec, Item> Clone for ShareChain<Handle, Conn, Codec, Item> {

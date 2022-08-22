@@ -1,8 +1,9 @@
-use crate::handle::{Handle, InboundHandle, OutboundHandle};
+use crate::handle::Handle;
 use crate::Channel;
 use futures::{Sink, Stream};
 use pin_project_lite::pin_project;
 use slotmap::DefaultKey;
+use std::any::Any;
 use std::fmt::Debug;
 use std::io;
 use std::pin::Pin;
@@ -19,7 +20,13 @@ pin_project! {
     }
 }
 
-impl<Conn, Codec, Item> HeadContext<Conn, Codec, Item> {
+impl<Conn, Codec, Item> HeadContext<Conn, Codec, Item>
+where
+    Conn: AsyncRead,
+    Codec: Decoder,
+    <Codec as Decoder>::Error: From<io::Error> + Debug,
+    <Codec as Decoder>::Item: Debug + 'static,
+{
     pub fn new(channel: Channel<Conn, Codec, Item>) -> Self {
         Self {
             channel,
@@ -30,38 +37,40 @@ impl<Conn, Codec, Item> HeadContext<Conn, Codec, Item> {
     pub fn set_next(&mut self, next: Option<DefaultKey>) {
         self.next = next;
     }
+
+    fn read(input: Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>) -> Box<dyn Any> {
+        Box::new(input.unwrap())
+    }
 }
 
 impl<Conn, Codec, Item> Handle for HeadContext<Conn, Codec, Item> {}
 
-impl<Conn, Codec, Item> InboundHandle<Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>>
-    for HeadContext<Conn, Codec, Item>
-where
-    Conn: AsyncRead,
-    Codec: Decoder,
-    <Codec as Decoder>::Error: From<io::Error> + Debug,
-    <Codec as Decoder>::Item: Debug,
-{
-    type Output = <Codec as Decoder>::Item;
+// impl<Conn, Codec, Item> InboundHandle
+//     for HeadContext<Conn, Codec, Item>
+// where
+//     Conn: AsyncRead,
+//     Codec: Decoder,
+//     <Codec as Decoder>::Error: From<io::Error> + Debug,
+//     <Codec as Decoder>::Item: Debug,
+// {
+//
+//     fn read(input: Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>) -> Box<dyn Any> {
+//         input as Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>.unwrap()
+//     }
+// }
 
-    fn read(input: Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>) -> Self::Output {
-        input.unwrap()
-    }
-}
-
-impl<Conn, Codec, Item> OutboundHandle<Item> for HeadContext<Conn, Codec, Item>
-where
-    Conn: AsyncWrite,
-    Codec: Encoder<Item>,
-    <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
-    Item: Debug + Send + 'static,
-{
-    type Output = Item;
-
-    fn write(input: Item) -> Self::Output {
-        input
-    }
-}
+// impl<Conn, Codec, Item> OutboundHandle for HeadContext<Conn, Codec, Item>
+// where
+//     Conn: AsyncWrite,
+//     Codec: Encoder<Item>,
+//     <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
+//     Item: Debug + Send + 'static,
+// {
+//
+//     fn write(input: Item) -> Box<dyn Any> {
+//         input
+//     }
+// }
 
 impl<Conn, Codec, Item> Stream for HeadContext<Conn, Codec, Item>
 where
@@ -70,14 +79,14 @@ where
     <Codec as Decoder>::Error: From<io::Error> + Debug,
     <Codec as Decoder>::Item: Debug,
 {
-    type Item = <Codec as Decoder>::Item;
+    type Item = Box<dyn Any>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         self.as_mut()
             .project()
             .channel
             .poll_next(cx)
-            .map(|opt| opt.map(|x| (<Self as InboundHandle<Result<<Codec as Decoder>::Item, <Codec as Decoder>::Error>>>::read(x))))
+            .map(|opt| opt.map(|x| (Self::read(x))))
     }
 }
 

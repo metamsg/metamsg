@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::handle::internal::handle_chain::ShareChain;
 use crate::handle::{InboundHandle, OutboundHandle};
 use futures::{Sink, Stream};
@@ -50,12 +51,11 @@ impl<Handle, Conn, Codec, Item> HandleContext<Handle, Conn, Codec, Item> {
     }
 }
 
-impl<Handle, Conn, Codec, Item, T> Stream for HandleContext<Handle, Conn, Codec, Item>
+impl<Handle, Conn, Codec, Item> Stream for HandleContext<Handle, Conn, Codec, Item>
 where
-    Handle: InboundHandle<T>,
-    T: Sized
+    Handle: InboundHandle
 {
-    type Item = T;
+    type Item = Box<dyn Any>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         self.as_mut()
@@ -67,9 +67,9 @@ where
     }
 }
 
-impl<Handle, Conn, Codec, Item, T> Sink<Item> for HandleContext<Handle, Conn, Codec, Item>
+impl<Handle, Conn, Codec, Item> Sink<Item> for HandleContext<Handle, Conn, Codec, Item>
 where
-    Handle: OutboundHandle<T>,
+    Handle: OutboundHandle,
     Codec: Encoder<Item>,
     <Codec as Encoder<Item>>::Error: From<io::Error> + Debug,
     Item: Debug + Send + 'static,

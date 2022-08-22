@@ -1,3 +1,5 @@
+use std::any::Any;
+
 pub(crate) mod internal;
 pub mod logger_handler;
 pub mod make_handle;
@@ -7,14 +9,12 @@ pub mod make_handle;
 /// Consider use function or method, stream usually use function.
 pub trait Handle {}
 
-pub trait InboundHandle<T>: Handle {
-    type Output;
+pub trait InboundHandle: Handle {
 
-    fn read(input: T) -> Self::Output;
+    fn read(input: Box<dyn Any>) -> Box<dyn Any>;
 }
 
-pub trait OutboundHandle<T>: Handle {
-    type Output;
+pub trait OutboundHandle: Handle {
 
-    fn write(input: T) -> Self::Output;
+    fn write(input: Box<dyn Any>) -> Box<dyn Any>;
 }
