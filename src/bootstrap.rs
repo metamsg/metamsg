@@ -60,11 +60,22 @@ where
 {
     println!("a new conn come in");
     let mut channel = Channel::new(socket, codec);
+    // let mut chain = Chain::new(channel);
+    // let log_handler = LoggerHandler::new();
+    // chain.add_last(log_handler);
     println!("{:?}", channel);
     while let Some(v) = channel.next().await {
         // There‘s no know item's type, in general, send is called in handle, that time, item's type
         // maybe has been actual.
         // let _ = channel.send("world");
-        println!("{:?}, {:?}", remote, v.unwrap());
+        match v {
+            Ok(item) => {
+                println!("{:?}, {:?}", remote, item);
+            }
+            Err(err) => {
+                println!("io error {:?}", err);
+                break;
+            }
+        }
     }
 }

@@ -57,6 +57,7 @@ pub mod bootstrap;
 mod channel;
 mod codec;
 mod handle;
+mod layer;
 mod proto;
 mod transport;
 
